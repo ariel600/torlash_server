@@ -8,6 +8,7 @@ import { GoogleCallbackAuthGuard } from './google-callback-auth.guard';
 import { Public } from './public.decorator';
 import { UserDocument } from '../schemas/user.schema';
 import { UpdateMeDto } from './dto/update-me.dto';
+import { getAuthCookieClearOptions, getAuthCookieSetOptions } from './auth-cookie';
 import { sendHtmlClientRedirect } from './html-client-redirect';
 import { getFrontendBaseUrl } from '../config/frontend-url';
 
@@ -34,15 +35,8 @@ export class AuthController {
     const token = this.authService.signToken(user);
     const fe = getFrontendBaseUrl(this.config);
     const maxAge = this.authService.cookieMaxAgeMs();
-    const isProd = this.config.get<string>('NODE_ENV', '') === 'production';
 
-    res.cookie(AUTH_COOKIE_NAME, token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge,
-      secure: isProd,
-    });
+    res.cookie(AUTH_COOKIE_NAME, token, getAuthCookieSetOptions(this.config, maxAge));
     // הפרונט (5173) רץ על host אחר מ־השרת (3000) — העוגייה ה־HttpOnly מוגדרת ל־:3000 בלבד;
     // בנוסף מעבירים JWT ב־query (פעם אחת) כדי ש־sessionStorage + Bearer יעבדו מול ה־API דרך Vite
     const url = new URL(`${fe}/`);
@@ -67,13 +61,7 @@ export class AuthController {
   @Post('logout')
   @Public()
   logout(@Res() res: Response) {
-    const isProd = this.config.get<string>('NODE_ENV', '') === 'production';
-    res.clearCookie(AUTH_COOKIE_NAME, {
-      path: '/',
-      sameSite: 'lax',
-      httpOnly: true,
-      secure: isProd,
-    });
+    res.clearCookie(AUTH_COOKIE_NAME, getAuthCookieClearOptions(this.config));
     return res.json({ ok: true });
   }
 
