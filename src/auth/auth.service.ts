@@ -6,6 +6,7 @@ import { Model } from 'mongoose';
 import { Profile } from 'passport-google-oauth20';
 import { User, UserDocument } from '../schemas/user.schema';
 import { UpdateMeDto } from './dto/update-me.dto';
+import { resolveGoogleCallbackUrl } from './google-callback-url';
 
 export type PublicUser = Record<string, unknown> & { id: string; email?: string };
 
@@ -123,6 +124,6 @@ export class AuthService {
    * חייב לתאום בדיוק ל־"Authorized redirect URI" ב־Google Cloud ול־‎`GoogleStrategy`.
    */
   getGoogleCallbackUrl(): string {
-    return this.config.getOrThrow<string>('GOOGLE_CALLBACK_URL');
+    return resolveGoogleCallbackUrl(this.config);
   }
 }

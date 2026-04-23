@@ -1,7 +1,8 @@
 import { ExecutionContext, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 import { NotOnWhitelistException } from './exceptions/not-on-whitelist.exception';
-import { AuthService } from './auth.service';
+import { resolveGoogleCallbackUrl } from './google-callback-url';
 
 /**
  * callback של Google: כישלון כללי (למשל ביטול ב־Google) — ‎`failureRedirect` ל־access-denied
@@ -9,14 +10,17 @@ import { AuthService } from './auth.service';
  */
 @Injectable()
 export class GoogleCallbackAuthGuard extends AuthGuard('google') {
-  constructor(private readonly authService: AuthService) {
+  constructor(private readonly config: ConfigService) {
     super();
   }
 
   getAuthenticateOptions(_context: ExecutionContext) {
-    const callback = this.authService.getGoogleCallbackUrl();
-    const apiBase = new URL(callback).origin;
-    return { failureRedirect: `${apiBase}/api/auth/redirect-bridge` };
+    const callbackURL = resolveGoogleCallbackUrl(this.config);
+    const apiBase = new URL(callbackURL).origin;
+    return {
+      callbackURL,
+      failureRedirect: `${apiBase}/api/auth/redirect-bridge`,
+    };
   }
 
   handleRequest(

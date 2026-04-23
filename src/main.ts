@@ -5,13 +5,19 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { SanitizeMongoBodyInterceptor } from './common/interceptors/sanitize-mongo-body.interceptor';
+import { resolveGoogleCallbackUrl } from './auth/google-callback-url';
 import { parseCorsOrigins } from './config/cors-origins';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const logger = new Logger('Bootstrap');
   const config = app.get(ConfigService);
-  console.log('Google Callback URL:', config.get('GOOGLE_CALLBACK_URL'));
+  console.log('Google Callback URL:', resolveGoogleCallbackUrl(config));
+
+  const expressApp = app.getHttpAdapter().getInstance() as {
+    set?: (key: string, value: unknown) => void;
+  };
+  expressApp.set?.('trust proxy', 1);
 
   app.use(
     helmet({
@@ -59,6 +65,9 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   const url = await app.getUrl();
   logger.log('Application is running on: ' + url);
+  logger.log(
+    'Listen URL above may show 127.0.0.1 when bound to 0.0.0.0; OAuth redirect_uri follows GOOGLE_CALLBACK_URL (see startup log).',
+  );
 }
 
 void bootstrap().catch((err: unknown) => {

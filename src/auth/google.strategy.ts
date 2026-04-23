@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Profile, Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { AuthService } from './auth.service';
+import { resolveGoogleCallbackUrl } from './google-callback-url';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
@@ -10,11 +11,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     private readonly config: ConfigService,
     private readonly authService: AuthService,
   ) {
-    const callbackURL = config.getOrThrow<string>('GOOGLE_CALLBACK_URL');
+    const callbackURL = resolveGoogleCallbackUrl(config);
     super({
       clientID: config.getOrThrow<string>('GOOGLE_CLIENT_ID'),
       clientSecret: config.getOrThrow<string>('GOOGLE_CLIENT_SECRET'),
       callbackURL,
+      /** עם ‎`trust proxy` ב-Express — אם ייעשה שימוש בפתרון יחסי, ‎`X-Forwarded-*` ייחשב */
+      proxy: true,
       scope: ['email', 'profile'],
     });
   }
