@@ -2,8 +2,8 @@ import { ConfigService } from '@nestjs/config';
 import type { CookieOptions } from 'express';
 
 /**
- * פרודקשן: Netlify (פרונט) ↔ Render (API) — דפדפן שולח עוגיה רק עם ‎`SameSite=None` + ‎`Secure`.
- * ‎`AUTH_COOKIE_DOMAIN` אופציונלי (למשל ‎`.onrender.com`); ריק = host-only של השרת.
+ * פרודקשן: Netlify (פרונט) ↔ Render (API) — ‎`SameSite=None` + ‎`Secure`.
+ * ללא ‎`domain` — host-only (דומיין השרת), כדי שהדפדפן ישייך את העוגיה אוטומטית.
  */
 export function getAuthCookieSetOptions(config: ConfigService, maxAge: number): CookieOptions {
   const base = getAuthCookieBaseOptions(config);
@@ -17,8 +17,6 @@ export function getAuthCookieClearOptions(config: ConfigService): CookieOptions 
 
 function getAuthCookieBaseOptions(config: ConfigService): CookieOptions {
   const isProd = config.get<string>('NODE_ENV', '') === 'production';
-  const domainRaw = (config.get<string>('AUTH_COOKIE_DOMAIN') ?? '').trim();
-  const domain = domainRaw.length > 0 ? domainRaw : undefined;
 
   if (isProd) {
     return {
@@ -26,7 +24,6 @@ function getAuthCookieBaseOptions(config: ConfigService): CookieOptions {
       secure: true,
       sameSite: 'none',
       path: '/',
-      ...(domain ? { domain } : {}),
     };
   }
 

@@ -10,14 +10,16 @@ import { parseCorsOrigins } from './config/cors-origins';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
-  const logger = new Logger('Bootstrap');
-  const config = app.get(ConfigService);
-  console.log('Google Callback URL:', resolveGoogleCallbackUrl(config));
 
   const expressApp = app.getHttpAdapter().getInstance() as {
     set?: (key: string, value: unknown) => void;
   };
+  /** לפני כל middleware — חשוב ל־‎`req.secure` / ‎`X-Forwarded-Proto` מאחורי Render */
   expressApp.set?.('trust proxy', 1);
+
+  const logger = new Logger('Bootstrap');
+  const config = app.get(ConfigService);
+  console.log('Google Callback URL:', resolveGoogleCallbackUrl(config));
 
   app.use(
     helmet({
@@ -25,6 +27,7 @@ async function bootstrap() {
       contentSecurityPolicy: false,
     }),
   );
+  /** ללא secret — רק עוגיות לא חתומות; חתימה על JWT היא בתוך הערך, לא ב-cookie-parser */
   app.use(cookieParser());
   app.useGlobalInterceptors(new SanitizeMongoBodyInterceptor());
 
