@@ -53,8 +53,9 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT ?? 3000;
-  await app.listen(port);
-  logger.log(`Server listening on http://localhost:${port}`);
+  await app.listen(port, '0.0.0.0');
+  const url = await app.getUrl();
+  logger.log('Application is running on: ' + url);
 }
 
 void bootstrap().catch((err: unknown) => {

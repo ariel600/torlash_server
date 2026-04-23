@@ -9,6 +9,7 @@ import { Public } from './public.decorator';
 import { UserDocument } from '../schemas/user.schema';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { sendHtmlClientRedirect } from './html-client-redirect';
+import { getFrontendBaseUrl } from '../config/frontend-url';
 
 @Controller('auth')
 export class AuthController {
@@ -31,7 +32,7 @@ export class AuthController {
   async googleCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as UserDocument;
     const token = this.authService.signToken(user);
-    const frontend = this.config.get<string>('FRONTEND_URL', 'http://localhost:5173');
+    const fe = getFrontendBaseUrl(this.config);
     const maxAge = this.authService.cookieMaxAgeMs();
     const isProd = this.config.get<string>('NODE_ENV', '') === 'production';
 
@@ -42,8 +43,6 @@ export class AuthController {
       maxAge,
       secure: isProd,
     });
-
-    const fe = frontend.replace(/\/$/, '');
     // הפרונט (5173) רץ על host אחר מ־השרת (3000) — העוגייה ה־HttpOnly מוגדרת ל־:3000 בלבד;
     // בנוסף מעבירים JWT ב־query (פעם אחת) כדי ש־sessionStorage + Bearer יעבדו מול ה־API דרך Vite
     const url = new URL(`${fe}/`);
@@ -59,9 +58,7 @@ export class AuthController {
   @Get('redirect-bridge')
   @Public()
   redirectBridge(@Res() res: Response) {
-    const fe = this.config
-      .get<string>('FRONTEND_URL', 'http://localhost:5173')
-      .replace(/\/$/, '');
+    const fe = getFrontendBaseUrl(this.config);
     const url = new URL(`${fe}/access-denied`);
     url.searchParams.set('error', 'oauth_failed');
     return sendHtmlClientRedirect(res, url.toString());

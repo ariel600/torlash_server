@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { NotOnWhitelistException } from './exceptions/not-on-whitelist.exception';
 import { sendHtmlClientRedirect } from './html-client-redirect';
+import { getFrontendBaseUrl } from '../config/frontend-url';
 
 @Catch(NotOnWhitelistException)
 export class NotOnWhitelistRedirectFilter implements ExceptionFilter {
@@ -17,9 +18,7 @@ export class NotOnWhitelistRedirectFilter implements ExceptionFilter {
     if (res.headersSent) {
       return;
     }
-    const fe = this.config
-      .get<string>('FRONTEND_URL', 'http://localhost:5173')
-      .replace(/\/$/, '');
+    const fe = getFrontendBaseUrl(this.config);
     const url = new URL(`${fe}/access-denied`);
     url.searchParams.set('error', 'not_on_whitelist');
     if (exception.email) {

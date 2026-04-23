@@ -118,4 +118,11 @@ export class AuthService {
     );
     return s * 1000;
   }
+
+  /**
+   * חייב לתאום בדיוק ל־"Authorized redirect URI" ב־Google Cloud ול־‎`GoogleStrategy`.
+   */
+  getGoogleCallbackUrl(): string {
+    return this.config.getOrThrow<string>('GOOGLE_CALLBACK_URL');
+  }
 }
