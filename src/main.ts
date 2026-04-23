@@ -11,6 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const logger = new Logger('Bootstrap');
   const config = app.get(ConfigService);
+  console.log('Google Callback URL:', config.get('GOOGLE_CALLBACK_URL'));
 
   app.use(
     helmet({
