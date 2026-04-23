@@ -1,22 +1,42 @@
 import { ConfigService } from '@nestjs/config';
 
 /**
- * ‎`FRONTEND_URLS` — רשימה מופרדת בפסיקים או נקודה־פסיק (דומיין חדש + ישן + localhost).
- * אם ריק — משתמשים ב־‎`FRONTEND_URL` (ברירת מחדל לפיתוח).
+ * איחוד ‎`FRONTEND_URL` + ‎`FRONTEND_URLS` (מורידים כפילויות) — CORS מחזיר ‎`Access-Control-Allow-Origin`
+ * רק לכתובת שמופיעה ברשימה, חובה ‎*בדיוק* כמו ‎`Origin` מהדפדפן (לרוב בלי ‎`/` בסוף).
+ * ב-Render: הגדר ‎`FRONTEND_URL=https://torlash.netlify.app` (או כל דומיין הפרונט), ו/או ‎`FRONTEND_URLS=...`.
  */
-export function parseCorsOrigins(config: ConfigService): string | string[] {
-  const multi = config.get<string | undefined>('FRONTEND_URLS');
-  if (multi != null && String(multi).trim() !== '') {
-    const list = String(multi)
-      .split(/[,;]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (list.length === 1) {
-      return list[0];
-    }
-    if (list.length > 1) {
-      return list;
-    }
+function normalizeOrigin(raw: string): string {
+  return String(raw).trim().replace(/\/$/, '');
+}
+
+function splitOrigins(value: string | undefined): string[] {
+  if (value == null || !String(value).trim()) {
+    return [];
   }
-  return config.get<string>('FRONTEND_URL', 'http://localhost:5173');
+  return String(value)
+    .split(/[,;]+/)
+    .map((s) => normalizeOrigin(s))
+    .filter(Boolean);
+}
+
+export function parseCorsOrigins(config: ConfigService): string | string[] {
+  const set = new Set<string>();
+  for (const o of splitOrigins(config.get<string | undefined>('FRONTEND_URLS'))) {
+    set.add(o);
+  }
+  const primary = config.get<string>('FRONTEND_URL', 'http://localhost:5173');
+  if (primary) {
+    set.add(normalizeOrigin(primary));
+  }
+  for (const o of splitOrigins(config.get<string | undefined>('CORS_EXTRA_ORIGINS'))) {
+    set.add(o);
+  }
+
+  if (set.size === 0) {
+    return 'http://localhost:5173';
+  }
+  if (set.size === 1) {
+    return [...set][0]!;
+  }
+  return [...set].sort();
 }

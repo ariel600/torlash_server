@@ -38,6 +38,8 @@ async function bootstrap() {
   } else {
     logger.log(`CORS: ${corsOrigin}`);
   }
+  // ‎`credentials: true` — fetch עם ‎`credentials: 'include'` (עוגיות) + CORS: מקור ‎`Origin` חייב
+  // לכלול *בדיוק* את ‎`FRONTEND_URL` (למשל ‎`https://torlash.netlify.app` ב-Render).
   app.enableCors({
     origin: corsOrigin,
     credentials: true,
