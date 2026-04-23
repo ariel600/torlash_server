@@ -112,15 +112,6 @@ export class AuthService {
     return this.toPublicUser(u)!;
   }
 
-  /** משך עוגיית JWT — ללא ‎`domain` (מוגדר ב־‎`auth-cookie.ts`, host-only) */
-  cookieMaxAgeMs(): number {
-    const s = parseInt(
-      this.config.get<string>('JWT_EXPIRES_IN', String(60 * 60 * 24 * 7)),
-      10,
-    );
-    return s * 1000;
-  }
-
   /**
    * חייב לתאום בדיוק ל־"Authorized redirect URI" ב־Google Cloud ול־‎`GoogleStrategy`.
    */

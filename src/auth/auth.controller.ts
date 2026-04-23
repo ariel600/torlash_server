@@ -2,13 +2,11 @@ import { Body, Controller, Get, Patch, Post, Req, Res, UseGuards } from '@nestjs
 import { ConfigService } from '@nestjs/config';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
-import { AUTH_COOKIE_NAME } from './auth.constants';
 import { GoogleAuthGuard } from './google-auth.guard';
 import { GoogleCallbackAuthGuard } from './google-callback-auth.guard';
 import { Public } from './public.decorator';
 import { UserDocument } from '../schemas/user.schema';
 import { UpdateMeDto } from './dto/update-me.dto';
-import { getAuthCookieClearOptions, getAuthCookieSetOptions } from './auth-cookie';
 import { sendHtmlClientRedirect } from './html-client-redirect';
 import { getFrontendBaseUrl } from '../config/frontend-url';
 
@@ -34,14 +32,8 @@ export class AuthController {
     const user = req.user as UserDocument;
     const token = this.authService.signToken(user);
     const fe = getFrontendBaseUrl(this.config);
-    const maxAge = this.authService.cookieMaxAgeMs();
-
-    res.cookie(AUTH_COOKIE_NAME, token, getAuthCookieSetOptions(this.config, maxAge));
-    // הפרונט (5173) רץ על host אחר מ־השרת (3000) — העוגייה ה־HttpOnly מוגדרת ל־:3000 בלבד;
-    // בנוסף מעבירים JWT ב־query (פעם אחת) כדי ש־sessionStorage + Bearer יעבדו מול ה־API דרך Vite
-    const url = new URL(`${fe}/`);
-    url.searchParams.set('auth_token', token);
-    return sendHtmlClientRedirect(res, url.toString());
+    const redirectUrl = `${fe}/auth-success?token=${encodeURIComponent(token)}`;
+    return res.redirect(302, redirectUrl);
   }
 
   /**
@@ -61,7 +53,6 @@ export class AuthController {
   @Post('logout')
   @Public()
   logout(@Res() res: Response) {
-    res.clearCookie(AUTH_COOKIE_NAME, getAuthCookieClearOptions(this.config));
     return res.json({ ok: true });
   }
 

@@ -1,7 +1,6 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { SanitizeMongoBodyInterceptor } from './common/interceptors/sanitize-mongo-body.interceptor';
@@ -27,8 +26,6 @@ async function bootstrap() {
       contentSecurityPolicy: false,
     }),
   );
-  /** ללא secret — רק עוגיות לא חתומות; חתימה על JWT היא בתוך הערך, לא ב-cookie-parser */
-  app.use(cookieParser());
   app.useGlobalInterceptors(new SanitizeMongoBodyInterceptor());
 
   // כל הנתיבים ב-Nest כוללים /api — לדוגמה /api/auth/google/callback
